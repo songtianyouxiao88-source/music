@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SoundDeck Modern</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+/* =========================================
+🎨 高級感のあるモダン・ミニマル・ダークテーマ
+========================================= */
+:root {
+--bg-main: #090d16; /* 深く洗練された漆黒 */
+--panel-bg: #111827; /* ソリッドで静かなグレー */
+--panel-border: rgba(255, 255, 255, 0.05); /* 限界まで細く薄い境界線 */
+--bar-bg: rgba(17, 24, 39, 0.85);
+
+--accent-color: #3b82f6; /* 知的で鮮やかなエレクトリックブルー */
+--text-main: #f3f4f6; /* 純白ではなく、目に優しいオフホワイト */
+--text-muted: #9ca3af; /* 綺麗な中間色のグレー */
+--text-sub: #4b5563; /* 深いグレー */
+
+--item-hover: rgba(255, 255, 255, 0.03);
+--item-active: rgba(59, 130, 246, 0.1);
+--glass-blur: blur(20px);
+--hotbar-height: 88px;
+}
+
+* {
+margin: 0; padding: 0; box-shrink: 0; box-sizing: border-box;
+font-family: 'Inter', -apple-system, sans-serif;
+letter-spacing: -0.01em; /* 文字間を少し詰めてスタイリッシュに */
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+background-color: var(--bg-main);
+color: var(--text-main);
+height: 100vh;
+overflow: hidden;
+display: flex;
+flex-direction: column;
+}
+
+/* スクロールバーも極細でスマートに */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+/* 🔒 認証画面（無駄な装飾を削ったミニマルなデザイン） */
+#authModal {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: var(--bg-main); display: flex; justify-content: center; align-items: center; z-index: 10000;
+}
+.auth-box {
+width: 100%; max-width: 360px; text-align: center; padding: 20px;
+}
+.auth-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+.auth-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 32px; }
+.auth-input {
+width: 100%; padding: 14px 16px; border-radius: 10px;
+border: 1px solid var(--panel-border); background: #161d2f;
+color: var(--text-main); font-size: 0.95rem; margin-bottom: 16px; outline: none;
+transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: var(--accent-color); }
+.auth-error { color: #ef4444; font-size: 0.8rem; margin-bottom: 16px; text-align: left; min-height: 18px; }
+
+.btn-primary {
+width: 100%; padding: 14px; border: none; border-radius: 10px;
+background: var(--text-main); color: var(--bg-main); font-size: 0.95rem; font-weight: 600;
+cursor: pointer; transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* 🍏 メインレイアウト */
+#appWrap { display: none; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; }
+
+header {
+height: 72px; padding: 0 40px; display: flex; justify-content: space-between; align-items: center;
+border-bottom: 1px solid var(--panel-border);
+}
+.brand-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.network-badge { font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(16, 185, 129, 0.1); color: #10b981; }
+
+main { flex: 1; padding: 32px 40px calc(var(--hotbar-height) + 32px) 40px; overflow: hidden; }
+.view-tab { display: none; width: 100%; height: 100%; flex-direction: column; overflow: hidden; }
+.view-tab.active { display: flex; }
+
+.section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.02em; }
+
+/* 🎵 グリッドとカード（スッキリした余白） */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+.card:hover { background: var(--item-hover); transform: translateY(-1px); }
+.card-img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+.card-title { font-weight: 600; font-size: 1rem; margin-bottom: 2px; }
+.card-desc { font-size: 0.85rem; color: var(--text-muted); }
+
+/* 🎵 3カラム・プレイリストレイアウト */
+.playlist-layout-v06 { display: grid; grid-template-columns: 0.9fr 1.2fr 1fr; gap: 24px; height: 100%; }
+.pl-panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 左：アートワーク */
+.pl-panel-art { padding: 32px; justify-content: center; align-items: center; text-align: center; }
+.art-mega-wrapper { width: 85%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.art-mega { width: 100%; height: 100%; object-fit: cover; }
+.art-title { font-size: 1.35rem; font-weight: 700; margin-top: 24px; margin-bottom: 4px; }
+.art-artist { font-size: 0.95rem; color: var(--text-muted); }
+
+/* 中央：洗練された歌詞表示 */
+.pl-panel-lyrics { padding: 32px; }
+.list-header { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px; }
+.lyrics-box { flex: 1; overflow-y: auto; padding: 40% 0; }
+.l-line { font-size: 1.2rem; font-weight: 600; color: rgba(255,255,255,0.2); line-height: 1.7; margin-bottom: 20px; transition: color 0.3s, transform 0.3s; }
+.l-line.active { color: var(--text-main); transform: scale(1.02); }
+
+/* 右：トラックリスト */
+.pl-panel-list { padding: 24px; }
+.track-list { overflow-y: auto; flex: 1; }
+.track-row { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 4px; }
+.track-row:hover { background: var(--item-hover); }
+.track-row.active { background: var(--item-active); }
+.track-row.active .t-title { color: var(--accent-color); }
+.t-num { width: 28px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+.t-art { width: 36px; height: 36px; border-radius: 6px; margin-right: 12px; object-fit: cover; }
+.t-info { flex: 1; overflow: hidden; }
+.t-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-artist { font-size: 0.8rem; color: var(--text-muted); }
+
+/* 🎵 ボトムコントローラー（浮かせるのではなく、最下部にスマートに配置） */
+.hotbar {
+position: fixed; bottom: 0; left: 0; width: 100%; height: var(--hotbar-height);
+background: var(--bar-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+border-top: 1px solid var(--panel-border); display: flex; align-items: center; padding: 0 40px; justify-content: space-between; z-index: 900;
+}
+.hb-left { display: flex; align-items: center; gap: 14px; width: 30%; }
+.hb-art { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; }
+.hb-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 1px; }
+.hb-artist { font-size: 0.8rem; color: var(--text-muted); }
+
+.hb-center { width: 40%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hb-controls { display: flex; align-items: center; gap: 20px; }
+.ctrl-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; transition: color 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.ctrl-btn:hover { color: var(--text-main); }
+.ctrl-btn.btn-play { font-size: 2.2rem; color: var(--text-main); }
+
+.hb-progress { width: 100%; display: flex; align-items: center; gap: 10px; }
+.hb-progress span { font-size: 0.75rem; color: var(--text-muted); min-width: 30px; }
+.slider { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-main); cursor: pointer; }
+
+.hb-right { display: flex; align-items: center; gap: 16px; width: 30%; justify-content: flex-end; }
+.nav-tabs { display: flex; gap: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; border: 1px solid var(--panel-border); }
+.nav-tab { background: none; border: none; color: var(--text-muted); width: 40px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+.nav-tab.active { background: rgba(255,255,255,0.06); color: var(--text-main); }
+
+@media (max-width: 900px) {
+.playlist-layout-v06 { grid-template-columns: 1fr; overflow-y: auto; }
+.hb-left { display: none; }
+.hb-center { width: 100%; }
+.hb-right { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="authModal">
+<div class="auth-box">
+<h2 class="auth-title">CyberDeck</h2>
+<p class="auth-subtitle">サインインして続行してください</p>
+<input type="password" id="authInput" class="auth-input" placeholder="パスワードを入力">
+<div id="authError" class="auth-error"></div>
+<button id="btnAuthSubmit" class="btn-primary">接続する</button>
+</div>
+</div>
+
+<div id="appWrap">
+<header>
+<span class="brand-title">CyberDeck</span>
+<div id="networkBadge" class="network-badge">ONLINE</div>
+</header>
+
+<main>
+<div id="tab-home" class="view-tab active">
+<h2 class="section-title">ホーム</h2>
+<div class="card-grid" id="homeQuickGrid"></div>
+<h2 class="section-title">注目の楽曲</h2>
+<div class="card-grid" id="homeRankGrid"></div>
+</div>
+
+<div id="tab-playlist" class="view-tab">
+<div class="playlist-layout-v06">
+<div class="pl-panel pl-panel-art">
+<div class="art-mega-wrapper">
+<img src="logo.png" class="art-mega" id="panelCover" onerror="this.src='logo.png'">
+</div>
+<div class="art-title" id="panelTitle">---</div>
+<div class="art-artist" id="panelArtist">---</div>
+</div>
+
+<div class="pl-panel pl-panel-lyrics">
+<span class="list-header">Lyrics</span>
+<div class="lyrics-box" id="lyricsBox"></div>
+</div>
+
+<div class="pl-panel pl-panel-list">
+<span class="list-header">Tracklist</span>
+<div class="track-list" id="trackList"></div>
+</div>
+</div>
+</div>
+</main>
+
+<div class="hotbar">
+<div class="hb-left">
+<img src="logo.png" class="hb-art" id="barCover" onerror="this.src='logo.png'">
+<div>
+<div class="hb-title" id="barTitle">---</div>
+<div class="hb-artist" id="barArtist">---</div>
+</div>
+</div>
+
+<div class="hb-center">
+<div class="hb-controls">
+<button class="ctrl-btn" id="btnShuffle"><i class="fa-solid fa-shuffle"></i></button>
+<button class="ctrl-btn" id="btnPrev"><i class="fa-solid fa-backward-step"></i></button>
+<button class="ctrl-btn btn-play" id="btnPlay"><i class="fa-solid fa-circle-play"></i></button>
+<button class="ctrl-btn" id="btnNext"><i class="fa-solid fa-forward-step"></i></button>
+<button class="ctrl-btn" id="btnRepeat"><i class="fa-solid fa-repeat"></i></button>
+</div>
+<div class="hb-progress">
+<span id="timeCurrent">0:00</span>
+<input type="range" id="progressSlider" class="slider" min="0" value="0" step="0.1">
+<span id="timeDuration">0:00</span>
+</div>
+</div>
+
+<div class="hb-right">
+<div class="nav-tabs">
+<button class="nav-tab active" data-tab="home"><i class="fa-solid fa-house"></i></button>
+<button class="nav-tab" data-tab="playlist"><i class="fa-solid fa-music"></i></button>
+</div>
+</div>
+</div>
+</div>
+
+<audio id="mainAudio"></audio>
+
+<script>
+let isPlaying = false;
+let currentTrackIndex = 0;
+
+// 楽曲データベース（必要に応じて元の曲データを追加してください）
+let songs = [
+{ id: 0, title: "いつもそばで", artist: "むらたしょうり", src: "song.mp3", cover: "logo.png", lines: [{time:0, text:"この曲はサンプルです♪"}] },
+];
+
+const audio = document.getElementById('mainAudio');
+const authModal = document.getElementById('authModal');
+const btnAuthSubmit = document.getElementById('btnAuthSubmit');
+const appWrap = document.getElementById('appWrap');
+const btnPlay = document.getElementById('btnPlay');
+const progressSlider = document.getElementById('progressSlider');
+
+// 認証ボタン
+btnAuthSubmit.addEventListener('click', () => {
+authModal.style.display = 'none';
+appWrap.style.display = 'flex';
+initApp();
+});
+
+function initApp() {
+renderTrackLists();
+selectTrack(0);
+}
+
+// タブ切り替え
+document.querySelectorAll('.nav-tab').forEach(tab => {
+tab.addEventListener('click', () => {
+document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+document.querySelectorAll('.view-tab').forEach(v => v.classList.remove('active'));
+tab.classList.add('active');
+document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+});
+});
+
+// リストの描画
+function renderTrackLists() {
+const htmlContent = songs.map((song, idx) => `
+<div class="card" onclick="selectTrack(${idx})">
+<img src="${song.cover}" class="card-img" onerror="this.src='logo.png'">
+<div>
+<div class="card-title">${song.title}</div>
+<div class="card-desc">${song.artist}</div>
+</div>
+</div>
+`).join('');
+
+document.getElementById('homeQuickGrid').innerHTML = htmlContent;
+document.getElementById('homeRankGrid').innerHTML = htmlContent; // 注目の楽曲にも描画
+
+document.getElementById('trackList').innerHTML = songs.map((song, idx) => `
+<div class="track-row" id="track-row-${idx}" onclick="selectTrack(${idx})">
+<div class="t-num">${idx+1}</div>
+<img src="${song.cover}" class="t-art" onerror="this.src='logo.png'">
+<div class="t-info">
+<div class="t-title">${song.title}</div>
+<div class="t-artist">${song.artist}</div>
+</div>
+</div>
+`).join('');
+}
+
+// 曲の選択処理【重要：音声ファイルのセット処理を復元】
+function selectTrack(index) {
+if (index < 0 || index >= songs.length) return;
+currentTrackIndex = index;
+const song = songs[index];
+
+// テキスト表示の更新
+document.getElementById('barTitle').innerText = song.title;
+document.getElementById('barArtist').innerText = song.artist;
+document.getElementById('barCover').src = song.cover;
+document.getElementById('panelTitle').innerText = song.title;
+document.getElementById('panelArtist').innerText = song.artist;
+document.getElementById('panelCover').src = song.cover;
+
+// アクティブクラスの切り替え
+document.querySelectorAll('.track-row').forEach(r => r.classList.remove('active'));
+const row = document.getElementById(`track-row-${index}`);
+if(row) row.classList.add('active');
+
+// オーディオソースの設定
+audio.src = song.src;
+
+// 歌詞の描画
+const lyricsBox = document.getElementById('lyricsBox');
+if (lyricsBox && song.lines) {
+lyricsBox.innerHTML = song.lines.map((line, lIdx) => `
+<div class="l-line" id="line-${lIdx}">${line.text}</div>
+`).join('');
+}
+
+// 再生中なら自動で次の曲を流す
+if (isPlaying) {
+audio.play().catch(e => console.log("Playback error:", e));
+}
+}
+
+// 再生・一時停止ボタンの制御【完全復元】
+btnPlay.addEventListener('click', () => {
+if (isPlaying) {
+audio.pause();
+btnPlay.innerHTML = '<i class="fa-solid fa-circle-play"></i>';
+} else {
+audio.play().catch(e => console.log("Playback error:", e));
+btnPlay.innerHTML = '<i class="fa-solid fa-circle-pause"></i>';
+}
+isPlaying = !isPlaying;
+});
+
+// 再生時間の更新とシークバーの連動【完全復元】
+audio.addEventListener('timeupdate', () => {
+const currentText = document.getElementById('timeCurrent');
+const durationText = document.getElementById('timeDuration');
+
+if (audio.duration) {
+progressSlider.max = audio.duration;
+progressSlider.value = audio.currentTime;
+
+let cMin = Math.floor(audio.currentTime / 60);
+let cSec = Math.floor(audio.currentTime % 60);
+currentText.innerText = `${cMin}:${String(cSec).padStart(2, '0')}`;
+
+let dMin = Math.floor(audio.duration / 60);
+let dSec = Math.floor(audio.duration % 60);
+durationText.innerText = `${dMin}:${String(dSec).padStart(2, '0')}`;
+
+// 歌詞の簡易アクティブ化ロジック
+if (songs[currentTrackIndex].lines) {
+songs[currentTrackIndex].lines.forEach((line, idx) => {
+if (audio.currentTime >= line.time) {
+document.querySelectorAll('.l-line').forEach(l => l.classList.remove('active'));
+const activeLine = document.getElementById(`line-${idx}`);
+if (activeLine) activeLine.classList.add('active');
+}
+});
+}
+}
+});
+
+// シークバーを直接手動で動かしたときの処理【完全復元】
+progressSlider.addEventListener('input', (e) => {
+audio.currentTime = e.target.value;
+});
+
+// 前後の曲へのスキップ
+document.getElementById('btnPrev').addEventListener('click', () => {
+let nextIdx = currentTrackIndex - 1;
+if (nextIdx < 0) nextIdx = songs.length - 1;
+selectTrack(nextIdx);
+});
+
+document.getElementById('btnNext').addEventListener('click', () => {
+let nextIdx = currentTrackIndex + 1;
+if (nextIdx >= songs.length) nextIdx = 0;
+selectTrack(nextIdx);
+});
+
+// 曲が終わったら自動で次へ
+audio.addEventListener('ended', () => {
+let nextIdx = currentTrackIndex + 1;
+if (nextIdx >= songs.length) nextIdx = 0;
+selectTrack(nextIdx);
+});
+</script>
+</body>
+</html>
